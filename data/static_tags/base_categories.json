@@ -1,0 +1,182 @@
+[
+    {
+        "id": "top-stories",
+        "name": "Top Stories",
+        "slug": "top-stories",
+        "description": "The most important and trending news headlines from all sectors."
+    },
+    {
+        "id": "breaking-news",
+        "name": "Breaking News",
+        "slug": "breaking-news",
+        "description": "Urgent and live updates on unfolding events as they happen."
+    },
+    {
+        "id": "national",
+        "name": "National",
+        "slug": "national",
+        "description": "News and developments from within the country."
+    },
+    {
+        "id": "international",
+        "name": "International",
+        "slug": "international",
+        "description": "Global affairs, foreign policy, and news from around the world."
+    },
+    {
+        "id": "politics",
+        "name": "Politics",
+        "slug": "politics",
+        "description": "National and international political developments, elections, and government policies."
+    },
+    {
+        "id": "business",
+        "name": "Business",
+        "slug": "business",
+        "description": "Financial markets, economy, corporate news, and entrepreneurship."
+    },
+    {
+        "id": "technology",
+        "name": "Technology",
+        "slug": "technology",
+        "description": "Updates on tech innovations, gadgets, software, startups, and digital trends."
+    },
+    {
+        "id": "sports",
+        "name": "Sports",
+        "slug": "sports",
+        "description": "News, scores, and updates from various sports disciplines."
+    },
+    {
+        "id": "entertainment",
+        "name": "Entertainment",
+        "slug": "entertainment",
+        "description": "News from film, music, television, art, and celebrity culture."
+    },
+    {
+        "id": "health",
+        "name": "Health",
+        "slug": "health",
+        "description": "Medical research, public health, wellness, and lifestyle."
+    },
+    {
+        "id": "education",
+        "name": "Education",
+        "slug": "education",
+        "description": "Updates from academic institutions, educational policies, and research."
+    },
+    {
+        "id": "science",
+        "name": "Science",
+        "slug": "science",
+        "description": "Discoveries, research, space exploration, and scientific breakthroughs."
+    },
+    {
+        "id": "environment",
+        "name": "Environment",
+        "slug": "environment",
+        "description": "Climate change, conservation, pollution, and environmental policies."
+    },
+    {
+        "id": "crime",
+        "name": "Crime",
+        "slug": "crime",
+        "description": "Reports on criminal activities, investigations, and law enforcement."
+    },
+    {
+        "id": "disasters",
+        "name": "Disasters",
+        "slug": "disasters",
+        "description": "Natural calamities, accidents, and emergency responses."
+    },
+    {
+        "id": "lifestyle",
+        "name": "Lifestyle",
+        "slug": "lifestyle",
+        "description": "Fashion, food, travel, culture, and personal well-being."
+    },
+    {
+        "id": "culture",
+        "name": "Culture",
+        "slug": "culture",
+        "description": "Arts, literature, traditions, and societal trends."
+    },
+    {
+        "id": "opinion",
+        "name": "Opinion",
+        "slug": "opinion",
+        "description": "Editorials, columns, and analyses from experts and commentators."
+    },
+    {
+        "id": "fact-check",
+        "name": "Fact Check",
+        "slug": "fact-check",
+        "description": "Verifying claims, news, and viral content for accuracy."
+    },
+    {
+        "id": "explainer",
+        "name": "Explainer",
+        "slug": "explainer",
+        "description": "In-depth articles providing context and background to complex topics."
+    },
+    {
+        "id": "auto",
+        "name": "Auto",
+        "slug": "auto",
+        "description": "News and reviews from the automotive industry."
+    },
+    {
+        "id": "travel",
+        "name": "Travel",
+        "slug": "travel",
+        "description": "Destination guides, travel tips, and tourism news."
+    },
+    {
+        "id": "food",
+        "name": "Food",
+        "slug": "food",
+        "description": "Culinary news, recipes, and restaurant reviews."
+    },
+    {
+        "id": "real-estate",
+        "name": "Real Estate",
+        "slug": "real-estate",
+        "description": "Market trends, property news, and housing updates."
+    },
+    {
+        "id": "agriculture",
+        "name": "Agriculture",
+        "slug": "agriculture",
+        "description": "News and policies related to farming and food production."
+    },
+    {
+        "id": "defence",
+        "name": "Defence",
+        "slug": "defence",
+        "description": "Military news, defense policies, and strategic affairs."
+    },
+    {
+        "id": "space",
+        "name": "Space",
+        "slug": "space",
+        "description": "Space exploration, astronomy, and celestial events."
+    },
+    {
+        "id": "energy",
+        "name": "Energy",
+        "slug": "energy",
+        "description": "Updates on power generation, renewable energy, and fossil fuels."
+    },
+    {
+        "id": "judicial",
+        "name": "Judicial",
+        "slug": "judicial",
+        "description": "News from courts, legal judgments, and judicial reforms."
+    },
+    {
+        "id": "social-issues",
+        "name": "Social Issues",
+        "slug": "social-issues",
+        "description": "News on societal challenges, human rights, and community welfare."
+    }
+]
