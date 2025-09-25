@@ -112,6 +112,53 @@ import { STATUS_CODES, MESSAGES } from '../Utils/status.codes.messages.js';
 //   }
 // };
 
+// export const createPoll = async (req, res, next) => {
+//   try {
+//     const {
+//       question,
+//       options,
+//       start_date,
+//       end_date,
+//       visibility,
+//       category,
+//       subCategory,
+//     } = req.body;
+
+//     if (!question || !options || !Array.isArray(options) || options.length < 2) {
+//       return next(new ApiError(STATUS_CODES.BAD_REQUEST, 'Poll must have a question and at least 2 options.'));
+//     }
+
+//     if (!start_date || !end_date) {
+//       return next(new ApiError(STATUS_CODES.BAD_REQUEST, 'Start and end dates are required.'));
+//     }
+
+//     const formattedOptions = options.map(option => ({
+//       text: option,
+//       votes: 0,
+//     }));
+
+//     const newPoll = await Poll.create({
+//       question,
+//       options: formattedOptions,
+//       start_date,
+//       end_date,
+//       visibility,
+//       category,
+//       subCategory,
+//       created_by: req?.admin?._id, // For Admin-created polls
+     
+//     });
+
+//     res.status(STATUS_CODES.CREATED).json({
+//       success: true,
+//       message: 'Poll created successfully.',
+//       data: newPoll,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const createPoll = async (req, res, next) => {
   try {
     const {
@@ -122,6 +169,9 @@ export const createPoll = async (req, res, next) => {
       visibility,
       category,
       subCategory,
+      country,
+      state,
+      city,
     } = req.body;
 
     if (!question || !options || !Array.isArray(options) || options.length < 2) {
@@ -133,7 +183,7 @@ export const createPoll = async (req, res, next) => {
     }
 
     const formattedOptions = options.map(option => ({
-      text: option,
+      text: typeof option === "string" ? option : option.text,
       votes: 0,
     }));
 
@@ -145,8 +195,10 @@ export const createPoll = async (req, res, next) => {
       visibility,
       category,
       subCategory,
-      created_by: req?.admin?._id, // For Admin-created polls
-     
+      country,
+      state,
+      city,
+      created_by: req?.admin?._id,
     });
 
     res.status(STATUS_CODES.CREATED).json({
@@ -201,6 +253,42 @@ export const createPoll = async (req, res, next) => {
 // };
 
 
+// export const getAllPolls = async (req, res, next) => {
+//   try {
+//     const userId = req.user?._id;
+
+//     const now = new Date();
+
+//     let polls = await Poll.find({
+//       end_date: { $gt: now } // only polls whose end_date is in future
+//     })
+//       .populate('category', 'name') // get category name
+//       .populate('subCategory', 'name') // get subCategory name
+//       .populate('created_by', 'name email') // get admin info (optional)
+//       .lean(); // convert to plain objects
+
+//     // Add custom field: hasVoted
+//     polls = polls.map(poll => {
+//       const hasVoted = poll.votes.some(
+//         vote => vote.user.toString() === userId.toString()
+//       );
+
+//       return {
+//         ...poll,
+//         hasVoted,
+//       };
+//     });
+
+//     res.status(STATUS_CODES.SUCCESS).json({
+//       success: true,
+//       message: 'Polls fetched successfully.',
+//       data: polls,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const getAllPolls = async (req, res, next) => {
   try {
     const userId = req.user?._id;
@@ -208,12 +296,49 @@ export const getAllPolls = async (req, res, next) => {
     const now = new Date();
 
     let polls = await Poll.find({
-      end_date: { $gt: now } // only polls whose end_date is in future
+      start_date: { $lte: now },  // अभी तक शुरू हो चुका हो
+      end_date: { $gt: now } ,     // अभी तक ख़त्म ना हुआ हो
+       isActive: true   
     })
-      .populate('category', 'name') // get category name
-      .populate('subCategory', 'name') // get subCategory name
-      .populate('created_by', 'name email') // get admin info (optional)
-      .lean(); // convert to plain objects
+      .populate('category', 'name') 
+      .populate('subCategory', 'name')
+      .populate('created_by', 'name email')
+      .lean();
+
+    // Add custom field: hasVoted
+    polls = polls.map(poll => {
+      const hasVoted = poll.votes?.some(
+        vote => vote.user.toString() === userId.toString()
+      ) || false;
+
+      return {
+        ...poll,
+        hasVoted,
+      };
+    });
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: 'Polls fetched successfully.',
+      data: polls,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllPollsAdmin = async (req, res, next) => {
+  try {
+    const userId = req.user?._id;
+
+    let polls = await Poll.find() // ⚡ koi filter nahi, sabhi polls
+      .populate('category', 'name') 
+      .populate('subCategory', 'name') 
+      .populate('created_by', 'name email')
+      .populate( 'country',  'name iso2' )
+           .populate ( 'state',  'name iso2')
+           .populate ( 'city',  'name' )
+      .lean();
 
     // Add custom field: hasVoted
     polls = polls.map(poll => {
@@ -229,7 +354,7 @@ export const getAllPolls = async (req, res, next) => {
 
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
-      message: 'Polls fetched successfully.',
+      message: 'All polls fetched successfully.',
       data: polls,
     });
   } catch (error) {
@@ -369,25 +494,72 @@ export const voteOnPoll = async (req, res, next) => {
   }
 };
 
-// Get poll results
+// // Get poll results
+// export const getPollResults = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const poll = await Poll.findById(id);
+//     if (!poll) {
+//       return next(new ApiError(STATUS_CODES.NOT_FOUND, 'Poll not found.'));
+//     }
+
+//     const totalVotes = poll.options.reduce((acc, option) => acc + option.votes, 0);
+
+//     const results = poll.options.map(option => ({
+//       text: option.text,
+//       votes: option.votes,
+//       percentage: totalVotes > 0 ? ((option.votes / totalVotes) * 100).toFixed(2) : '0.00',
+//     }));
+
+//     res.status(STATUS_CODES.SUCCESS).json({
+//       success: true,
+//       data: {
+//         question: poll.question,
+//         totalVotes,
+//         results,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 export const getPollResults = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const poll = await Poll.findById(id);
+
+    const poll = await Poll.findById(id).populate("votes.user", "name email");
     if (!poll) {
-      return next(new ApiError(STATUS_CODES.NOT_FOUND, 'Poll not found.'));
+      return next(new ApiError(STATUS_CODES.NOT_FOUND, "Poll not found."));
     }
 
-    const totalVotes = poll.options.reduce((acc, option) => acc + option.votes, 0);
+    // ✅ Calculate total votes
+    const totalVotes = poll.options.reduce((acc, opt) => acc + opt.votes, 0);
 
-    const results = poll.options.map(option => ({
-      text: option.text,
-      votes: option.votes,
-      percentage: totalVotes > 0 ? ((option.votes / totalVotes) * 100).toFixed(2) : '0.00',
-    }));
+    // ✅ Prepare results
+    const results = poll.options.map((option, index) => {
+      // कौन-कौन से users ने इस option को vote किया
+      const voters = poll.votes
+        .filter(v => v.optionIndex === index)
+        .map(v => ({
+          userId: v.user._id,
+          name: v.user.name,
+          email: v.user.email,
+          votedAt: v.votedAt,
+        }));
+
+      return {
+        text: option.text,
+        votes: option.votes,
+        percentage:
+          totalVotes > 0 ? ((option.votes / totalVotes) * 100).toFixed(2) : "0.00",
+        voters,
+      };
+    });
 
     res.status(STATUS_CODES.SUCCESS).json({
       success: true,
+      message: "Poll results fetched successfully",
       data: {
         question: poll.question,
         totalVotes,
@@ -416,6 +588,25 @@ export const deactivatePoll = async (req, res, next) => {
 };
 
 
+export const deletePoll = async (req, res, next) => {
+  try {
+    const { id } = req.params; // poll id from URL
+
+    const poll = await Poll.findById(id);
+    if (!poll) {
+      return next(new ApiError(STATUS_CODES.NOT_FOUND, "Poll not found."));
+    }
+
+    await Poll.findByIdAndDelete(id);
+
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      message: "Poll deleted successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // export const updatePoll = async (req, res, next) => {
 //   try {
@@ -466,6 +657,90 @@ export const deactivatePoll = async (req, res, next) => {
 //   }
 // };
 
+// export const updatePoll = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const {
+//       question,
+//       options,
+//       isActive,
+//       visibility,
+//       start_date,
+//       end_date
+//     } = req.body;
+
+//     const userId = req.user?._id;
+
+//     const poll = await Poll.findById(id);
+//     if (!poll) {
+//       return next(new ApiError(STATUS_CODES.NOT_FOUND, 'Poll not found.'));
+//     }
+
+
+//     // Update question
+//     if (question) {
+//       poll.question = question.trim();
+//     }
+
+//     // Update options
+//   // Update options
+// if (Array.isArray(options) && options.length >= 2) {
+//   // Merge old and new options (preserve votes if option text matches)
+//   poll.options = options.map(opt => {
+//     let text, votes;
+
+//     if (typeof opt === "string") {
+//       text = opt.trim();
+//       votes = 0;
+//     } else {
+//       text = opt.text?.trim();
+//       // preserve existing vote count if option already exists
+//       const old = poll.options.find(o => o.text === text);
+//       votes = old ? old.votes : (opt.votes || 0);
+//     }
+
+//     return { text, votes };
+//   });
+
+//   poll.totalVotes = poll.options.reduce((sum, o) => sum + (o.votes || 0), 0);
+// }
+
+
+//     // Update isActive
+//     if (typeof isActive === 'boolean') {
+//       poll.isActive = isActive;
+//     }
+
+//     // Update visibility
+//     if (visibility && ['public', 'registered'].includes(visibility)) {
+//       poll.visibility = visibility;
+//     }
+
+//     // Update start_date
+//     if (start_date) {
+//       poll.start_date = new Date(start_date);
+//     }
+
+//     // Update end_date
+//     if (end_date) {
+//       poll.end_date = new Date(end_date);
+//     }
+
+//     await poll.save();
+
+//     res.status(STATUS_CODES.SUCCESS).json({
+//       success: true,
+//       message: 'Poll updated successfully.',
+//       data: poll
+//     });
+
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+
+// ✅ Update Poll API
 export const updatePoll = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -475,61 +750,63 @@ export const updatePoll = async (req, res, next) => {
       isActive,
       visibility,
       start_date,
-      end_date
+      end_date,
+      category,
+      subCategory,
+      country,
+      state,
+      city,
     } = req.body;
-
-    const userId = req.user?._id;
 
     const poll = await Poll.findById(id);
     if (!poll) {
-      return next(new ApiError(STATUS_CODES.NOT_FOUND, 'Poll not found.'));
+      return next(new ApiError(404, "Poll not found"));
     }
 
-
-    // Update question
-    if (question) {
-      poll.question = question.trim();
+    // ✅ Ensure options are always array with at least 2
+    let finalOptions = poll.options; // old options by default
+    if (options && Array.isArray(options)) {
+      finalOptions = options
+        .map((opt) => {
+          if (typeof opt === "string") {
+            return { text: opt.trim(), votes: 0 }; // string → object
+          }
+          if (typeof opt === "object" && opt.text) {
+            return { text: opt.text.trim(), votes: opt.votes || 0 };
+          }
+          return null;
+        })
+        .filter(Boolean);
     }
 
-    // Update options
-    if (Array.isArray(options) && options.length >= 2) {
-      poll.options = options.map(option => ({
-        text: option.trim(),
-        votes: 0
-      }));
-      poll.votes = [];
-      poll.totalVotes = 0;
+    if (!finalOptions || finalOptions.length < 2) {
+      return next(new ApiError(400, "At least 2 options are required"));
     }
 
-    // Update isActive
-    if (typeof isActive === 'boolean') {
-      poll.isActive = isActive;
-    }
+    // ✅ Update fields
+    poll.question   = question   || poll.question;
+    poll.options    = finalOptions;
+    poll.isActive   = isActive !== undefined ? isActive : poll.isActive;
+    poll.visibility = visibility || poll.visibility;
+    poll.start_date = start_date || poll.start_date;
+    poll.end_date   = end_date   || poll.end_date;
+    poll.category   = category   || poll.category;
+    poll.subCategory = subCategory || poll.subCategory;
 
-    // Update visibility
-    if (visibility && ['public', 'registered'].includes(visibility)) {
-      poll.visibility = visibility;
-    }
-
-    // Update start_date
-    if (start_date) {
-      poll.start_date = new Date(start_date);
-    }
-
-    // Update end_date
-    if (end_date) {
-      poll.end_date = new Date(end_date);
-    }
+    // ✅ Location fields
+    poll.country = country || poll.country;
+    poll.state   = state   || poll.state;
+    poll.city    = city    || poll.city;
 
     await poll.save();
 
-    res.status(STATUS_CODES.SUCCESS).json({
+    res.status(200).json({
       success: true,
-      message: 'Poll updated successfully.',
-      data: poll
+      message: "Poll updated successfully",
+      data: poll,
     });
-
   } catch (error) {
     next(error);
   }
 };
+

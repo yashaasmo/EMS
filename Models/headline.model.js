@@ -2,6 +2,14 @@ import mongoose from 'mongoose';
 
 const headlineSchema = mongoose.Schema(
   {
+
+
+    newsId: { 
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'News', 
+      required: [true, 'News ID is required for a headline'],
+      unique: true 
+    },
     headlineText: {
       type: String,
       required: [true, 'Please add a headline text'],

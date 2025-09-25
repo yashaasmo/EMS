@@ -259,3 +259,4 @@ export const canDeleteAdmins = hasSpecificPermission('manageAdmins', 'delete');
 export const canCreatePoll = hasSpecificPermission('managePolls', 'create');
 export const canUpdatePoll = hasSpecificPermission('managePolls', 'update');
 export const canDeletePoll = hasSpecificPermission('managePolls', 'delete');
+

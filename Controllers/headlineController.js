@@ -123,6 +123,7 @@ export const getAllHeadlines = async (req, res, next) => {
             .populate('createdBy', 'username email role country state city profileImage canDirectPost canDirectGoLive')
             .populate('updatedBy', 'username email')
             .populate('country', 'name iso2')
+            .populate('newsId', 'slug_en ')
             .populate('state', 'name iso2')
             .populate('district', 'name')
             .sort({ createdAt: -1 })

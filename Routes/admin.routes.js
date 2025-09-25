@@ -351,7 +351,7 @@ import { createHeadline, deleteHeadline, getAllHeadlines, getHeadlineById, updat
 import { createCategory, getAllCategories, getCategoryById, updateCategory, deleteCategory, createSubCategory, getAllSubCategories, getSubCategoryById, updateSubCategory, deleteSubCategory } from '../Controllers/taggingController.js';
 import { getAllCountries, getStatesByCountry, getCitiesByState } from '../Controllers/locationDataController.js';
 import { deleteReporterById, getAllReporters, updateReporterById } from '../Controllers/userManagementController.js'; 
-import { getAllNews, getNewsById, updateNews, deleteNews } from '../Controllers/newsController.js';
+import { getAllNews, getNewsById, updateNews, deleteNews, getAllNewsAdmin, createNews, getNewsByReporter } from '../Controllers/newsController.js';
 import { createAd, getAllAds, updateAd, deleteAd } from '../Controllers/ad.controller.js';
 import { createShort, getAllShorts, getShortById, updateShort, deleteShort } from '../Controllers/shortsController.js';
 import { loginUser, registerUser } from '../Controllers/authController.js';
@@ -362,7 +362,14 @@ import {
   getPollResults,
   deactivatePoll,
   updatePoll,
+  getAllPollsAdmin,
+  deletePoll,
 } from '../Controllers/polls.controller.js';
+import { createVideo, deleteVideo, getAllVideos, getVideoById, updateVideo } from '../Controllers/video.controller.js';
+import { createTag, deleteTag, getAllTags, getTrendingTopics, updateTag } from '../Controllers/tagController.js';
+import { getCategoryNews, getSelectedCategories, setCategoryNews } from '../Controllers/CategoryNews.js';
+import { addSlidesToStory, createStory, deleteStory, getAllStories, getStoryById } from '../Controllers/story.controller.js';
+import { uploadMultipleFilesToSpaces } from '../Services/s3Service.js';
 const router = express.Router();
 
 
@@ -395,14 +402,50 @@ router.get('/public/shorts/:id', getShortById);
 
 router.post('/login', loginUser);
 
+
+router.post("/set-category", setCategoryNews);
+
+// Get news of selected category
+router.get("/selected-category-news", getCategoryNews);
+router.get("/selected-categories", getSelectedCategories);
+
+
+
+
+
+// ✅ Get all stories
+router.get("/Stories", getAllStories);
+
+// ✅ Get story by ID
+router.get("/getStoryById/:storyId", getStoryById);
+router.post("/upload-media", upload.array("mediaFiles", 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    const urls = await uploadMultipleFilesToSpaces(req.files, "news-media");
+    res.json({ locations: urls });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
+
 // ─────────────────────────────────────────
 // 🔐 ADMIN + PERMISSION ROUTES (Protected)
 // ─────────────────────────────────────────
 router.use(authenticate, isAdmin); // Everything below requires admin + permission
+// ✅ Create story (with media upload)
+router.post("/createStory",  upload.array("slides"), createStory);
+
+router.delete("/createStory/:storyId" , deleteStory);
+router.post("/createStory/slides/:storyId",  upload.array("slides"), addSlidesToStory);
+router.post('/news', upload.array('mediaFiles', 10), createNews);
 
 // Reporter Management
 router.get('/reporters', canUpdateReporters, getAllReporters);
-router.put("/reporters/:id", canUpdateReporters, updateReporterById);
+router.put("/reporters/:Id", canUpdateReporters, updateReporterById);
 router.delete('/reporters/:id',canDeleteReporters, deleteReporterById);
 router.post('/register',canCreateReporters, upload.single('profileImageFile'), registerUser);
 // Category Management
@@ -422,8 +465,17 @@ router.get('/headline/:id', canUpdateHeadlines, getHeadlineById);
 router.put('/headline/:id', canUpdateHeadlines, updateHeadline);
 router.delete('/headline/:id', canDeleteHeadlines, deleteHeadline);
 
+
+// Video Management Routes
+router.post('/video', upload.single('videoFile'), createVideo);
+router.get('/video', getAllVideos);
+router.get('/video/:id', getVideoById);
+router.put('/video/:id', updateVideo);
+router.delete('/video/:id',  deleteVideo);
+
+
 // News Management
-router.get('/news', canUpdateNews, getAllNews);
+router.get('/news', canUpdateNews, getAllNewsAdmin);
 router.get('/news/:id', canUpdateNews, getNewsById);
 router.put('/news/:id', canUpdateNews, upload.array('mediaFiles', 10), updateNews);
 router.delete('/news/:id', canDeleteNews, deleteNews);
@@ -447,14 +499,28 @@ router.delete('/shorts/:id', canDeleteShorts, deleteShort);
 // Protected Routes
 
 // poll mangemnetn 
-router.get('/polls', getAllPolls);
-router.get('/:pollId', getPollResults);
+router.get('/polls', getAllPollsAdmin);
+router.get('/polls/:id', getPollResults);
 router.post('/polls', canCreatePoll, createPoll);
 router.put('/polls/:id', canUpdatePoll, updatePoll);
 router.put('/deactivate/:pollId',canDeletePoll,  deactivatePoll);
+router.delete('/polls/:id', canDeletePoll, deletePoll);
+
 // router.post('/polls',  createPoll);
 // router.put('/polls/:id',  updatePoll);
 // router.put('/polls/deactivate/:pollId',  deactivatePoll);
 
+
+// Admin Only
+router.post("/createTag",  createTag);
+router.put("/updateTag/:id",  updateTag);
+router.delete("/deleteTag/:id",  deleteTag);
+
+// Public
+router.get("/getAllTags", getAllTags);
+router.get("/getTrendingTopics", getTrendingTopics);
+
+
+router.get('/getNewsByReporter', getNewsByReporter);
 
 export default router;

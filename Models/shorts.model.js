@@ -8,6 +8,11 @@ const ShortsSchema = new mongoose.Schema({
         trim: true,
         maxlength: [100, 'Title cannot be more than 100 characters']
     },
+    slug: { 
+        type: String,
+        index: true,
+        sparse: true // unique: true मत लगाना, क्योंकि हम id के साथ unique बनाएँगे
+    },
     description: {
         type: String,
         trim: true,
@@ -79,21 +84,21 @@ const ShortsSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         },
-        replies: [{
-            user: {
-                type: mongoose.Schema.ObjectId,
-                ref: 'User',
-                required: true
-            },
-            text: {
-                type: String,
-                required: true
-            },
-            repliedAt: {
-                type: Date,
-                default: Date.now
-            }
-        }]
+        // replies: [{
+        //     user: {
+        //         type: mongoose.Schema.ObjectId,
+        //         ref: 'User',
+        //         required: true
+        //     },
+        //     text: {
+        //         type: String,
+        //         required: true
+        //     },
+        //     repliedAt: {
+        //         type: Date,
+        //         default: Date.now
+        //     }
+        // }]
     }],
     viewsCount: {
         type: Number,

@@ -61,6 +61,7 @@
 
 // export default mongoose.model('Poll', pollSchema);
 
+
 import mongoose from 'mongoose';
 
 const optionSchema = new mongoose.Schema({
@@ -109,6 +110,21 @@ const pollSchema = new mongoose.Schema({
   subCategory: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'SubCategory',
+    default: null,
+  },
+   country: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Country',
+    default: null,
+  },
+  state: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'State',
+    default: null,
+  },
+  city: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City',
     default: null,
   },
   start_date: {

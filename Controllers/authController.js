@@ -153,6 +153,7 @@ export const loginUser = async (req, res) => {
                 dateOfBirth: user.dateOfBirth,
                 canDirectPost: user.canDirectPost,
                 canDirectGoLive: user.canDirectGoLive,
+                
             },
             token: getTokenForUser(user), // ✅ token generation function
         });

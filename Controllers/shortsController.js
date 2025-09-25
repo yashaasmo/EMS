@@ -693,7 +693,7 @@ import { Category, SubCategory, Country, State, City } from '../Models/lookupDat
 import { STATUS_CODES, MESSAGES } from '../Utils/status.codes.messages.js';
 import { ApiError } from '../Utils/apiError.js';
 import { uploadFileToSpaces, deleteFileFromSpaces } from '../Services/s3Service.js';
-
+import { generateSlug } from '../Utils/slugifyUtils.js';
 // Helper to delete multiple files
 const deleteMultipleFiles = async (urls) => {
     if (!urls || urls.length === 0) return;
@@ -793,7 +793,10 @@ export const createShort = async (req, res, next) => {
             else throw new ApiError(STATUS_CODES.BAD_REQUEST, MESSAGES.CITY_NOT_FOUND + ": Invalid city name.");
         }
 
+        
         const short = await Shorts.create(shortData);
+        short.slug = `${generateSlug(title, 'hi')}-${short._id}`;
+        await short.save();
 
         res.status(STATUS_CODES.CREATED).json({
             message: "Short created successfully.",
@@ -941,7 +944,7 @@ export const getAllShorts = async (req, res, next) => {
             { path: 'city', select: 'name' },
             { path: 'likes.user', select: '_id' }, // ✅ Only _id is needed to check like
             { path: 'comments.user', select: 'name profileImage' },
-            { path: 'comments.replies.user', select: 'name profileImage' }
+           
         ]);
 
         const shorts = await query;
@@ -972,7 +975,8 @@ const finalShorts = shorts.map(short => {
         if (startIndex > 0) pagination.prev = { page: page - 1, limit };
 
         res.status(STATUS_CODES.SUCCESS).json({
-            success: true,
+            status: STATUS_CODES.SUCCESS,
+            success: true, 
             count: finalShorts.length,
             pagination,
             data: finalShorts,
@@ -1406,6 +1410,102 @@ export const getCommentsByShortId = async (req, res, next) => {
 
     } catch (error) {
         console.error("Error fetching comments for short:", error);
+        next(error);
+    }
+};
+
+
+export const getMyShorts = async (req, res, next) => {
+    try {
+        const userId = req.user?._id;
+        if (!userId) {
+            throw new ApiError(STATUS_CODES.UNAUTHORIZED, MESSAGES.UNAUTHORIZED);
+        }
+
+        let query;
+
+        const reqQuery = { ...req.query };
+        const removeFields = ['select', 'sort', 'page', 'limit'];
+        removeFields.forEach(param => delete reqQuery[param]);
+
+        let queryStr = JSON.stringify(reqQuery);
+        queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+        let finalQueryFilter = JSON.parse(queryStr);
+
+        // Filter by reporter (createdBy)
+        finalQueryFilter.createdBy = userId;
+
+        query = Shorts.find(finalQueryFilter);
+
+        // Field selection
+        if (req.query.select) {
+            const fields = req.query.select.split(',').join(' ');
+            query = query.select(fields);
+        }
+
+        // Sorting
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ');
+            query = query.sort(sortBy);
+        } else {
+            query = query.sort('-createdAt');
+        }
+
+        // Pagination
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        const total = await Shorts.countDocuments(finalQueryFilter);
+        const totalPages = Math.ceil(total / limit);
+
+        query = query.skip(startIndex).limit(limit);
+
+        // Populate references
+        query = query.populate([
+            { path: 'createdBy', select: 'name email profileImage' },
+            { path: 'category', select: 'name' },
+            { path: 'subCategory', select: 'name' },
+            { path: 'country', select: 'name iso2' },
+            { path: 'state', select: 'name iso2' },
+            { path: 'city', select: 'name' },
+            { path: 'likes.user', select: '_id' },
+            { path: 'comments.user', select: 'name profileImage' },
+            { path: 'comments.replies.user', select: 'name profileImage' }
+        ]);
+
+        const shorts = await query;
+
+        const currentUserId = userId.toString();
+
+        // Add extra fields
+        const finalShorts = shorts.map(short => {
+            const shortObj = short.toObject({ virtuals: true });
+            shortObj.postedDate = short.publishedAt ? short.publishedAt.toISOString().split('T')[0] : null;
+            shortObj.createdAtDate = short.createdAt.toISOString().split('T')[0];
+
+            shortObj.isLikedByCurrentUser = Array.isArray(short.likes)
+                ? short.likes.some(like => like?.user?._id?.toString() === currentUserId)
+                : false;
+
+            return shortObj;
+        });
+
+        // Pagination metadata
+        const pagination = {};
+        if (endIndex < total) pagination.next = { page: page + 1, limit };
+        if (startIndex > 0) pagination.prev = { page: page - 1, limit };
+
+        res.status(STATUS_CODES.SUCCESS).json({
+            success: true,
+            count: finalShorts.length,
+            pagination,
+            data: finalShorts,
+            totalPages
+        });
+
+    } catch (error) {
+        console.error("Error fetching reporter shorts:", error);
         next(error);
     }
 };

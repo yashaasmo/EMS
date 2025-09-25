@@ -552,42 +552,102 @@ export const deleteReporterById = async (req, res, next) => {
 };
 
 
+// export const getAllAdmins = async (req, res, next) => {
+//     try {
+//         const admins = await User.find({ role: 'admin' })
+//             .select('-password -__v')
+//             .populate('country', 'name iso2')
+//             .populate('state', 'name iso2')
+//             .populate('city', 'name');
+
+//         const formattedAdmins = admins.map(admin => ({
+//             id: admin._id.toString(),
+//             name: admin.name,
+//             email: admin.email,
+//             profileImage: admin.profileImage || null,
+//             country: admin.country ? { id: admin.country._id, name: admin.country.name, iso2: admin.country.iso2 } : null,
+//             state: admin.state ? { id: admin.state._id, name: admin.state.name, iso2: admin.state.iso2 } : null,
+//             city: admin.city ? { id: admin.city._id, name: admin.city.name } : null,
+//             // Ensure adminPermissions is returned correctly, potentially deeply copying
+//             adminPermissions: JSON.parse(JSON.stringify(admin.adminPermissions || {})),
+//             createdAt: admin.createdAt,
+//             updatedAt: admin.updatedAt,
+//             address: admin.address,
+//             dateOfBirth: admin.dateOfBirth
+//         }));
+
+//         res.status(STATUS_CODES.SUCCESS).json({
+//             success: true,
+//             count: formattedAdmins.length,
+//             data: formattedAdmins
+//         });
+//     } catch (error) {
+//         console.error("Error fetching admins:", error);
+//         next(new ApiError(STATUS_CODES.INTERNAL_SERVER_ERROR, "Failed to fetch admins", [error.message]));
+//     }
+// };
+
+
 export const getAllAdmins = async (req, res, next) => {
-    try {
-        const admins = await User.find({ role: 'admin' })
-            .select('-password -__v')
-            .populate('country', 'name iso2')
-            .populate('state', 'name iso2')
-            .populate('city', 'name');
+  try {
+    // Fetch all users with role 'admin'
+    const admins = await User.find({ role: "admin" })
+      .select("-password -__v") // Exclude password and __v
+      .populate("country", "_id name iso2")
+      .populate("state", "_id name iso2")
+      .populate("city", "_id name");
 
-        const formattedAdmins = admins.map(admin => ({
-            id: admin._id.toString(),
-            name: admin.name,
-            email: admin.email,
-            profileImage: admin.profileImage || null,
-            country: admin.country ? { id: admin.country._id, name: admin.country.name, iso2: admin.country.iso2 } : null,
-            state: admin.state ? { id: admin.state._id, name: admin.state.name, iso2: admin.state.iso2 } : null,
-            city: admin.city ? { id: admin.city._id, name: admin.city.name } : null,
-            // Ensure adminPermissions is returned correctly, potentially deeply copying
-            adminPermissions: JSON.parse(JSON.stringify(admin.adminPermissions || {})),
-            createdAt: admin.createdAt,
-            updatedAt: admin.updatedAt,
-            address: admin.address,
-            dateOfBirth: admin.dateOfBirth
-        }));
+    // Map admins to formatted response
+    const formattedAdmins = admins.map((admin) => ({
+      id: admin._id.toString(),
+      name: admin.name,
+      email: admin.email,
+      profileImage: admin.profileImage || null,
+      country: admin.country
+        ? {
+            id: admin.country._id.toString(),
+            name: admin.country.name,
+            iso2: admin.country.iso2,
+          }
+        : null,
+      state: admin.state
+        ? {
+            id: admin.state._id.toString(),
+            name: admin.state.name,
+            iso2: admin.state.iso2,
+          }
+        : null,
+      city: admin.city
+        ? {
+            id: admin.city._id.toString(),
+            name: admin.city.name,
+          }
+        : null,
+      adminPermissions: JSON.parse(JSON.stringify(admin.adminPermissions || {})),
+      canDirectPost: admin.canDirectPost,
+      canDirectGoLive: admin.canDirectGoLive,
+      address: admin.address,
+      dateOfBirth: admin.dateOfBirth,
+      createdAt: admin.createdAt,
+      updatedAt: admin.updatedAt,
+    }));
 
-        res.status(STATUS_CODES.SUCCESS).json({
-            success: true,
-            count: formattedAdmins.length,
-            data: formattedAdmins
-        });
-    } catch (error) {
-        console.error("Error fetching admins:", error);
-        next(new ApiError(STATUS_CODES.INTERNAL_SERVER_ERROR, "Failed to fetch admins", [error.message]));
-    }
+    res.status(STATUS_CODES.SUCCESS).json({
+      success: true,
+      count: formattedAdmins.length,
+      data: formattedAdmins,
+    });
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    next(
+      new ApiError(
+        STATUS_CODES.INTERNAL_SERVER_ERROR,
+        "Failed to fetch admins",
+        [error.message]
+      )
+    );
+  }
 };
-
-
 export const updateAdminPermissions = async (req, res, next) => {
     try {
         const adminId = req.params.id;
